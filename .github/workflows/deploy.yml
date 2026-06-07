@@ -64,6 +64,10 @@ jobs:
           port: 22
           script: |
             set -e
+            echo "=== Ensuring GitHub is in known_hosts ==="
+            mkdir -p ~/.ssh
+            ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts
+
             echo "=== Checking directory ==="
             mkdir -p ${{ env.APP_DIR }}
             cd ${{ env.APP_DIR }}
