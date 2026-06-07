@@ -64,9 +64,17 @@ jobs:
           port: 22
           script: |
             set -e
-            echo "=== Pulling latest code ==="
+            echo "=== Checking directory ==="
+            mkdir -p ${{ env.APP_DIR }}
             cd ${{ env.APP_DIR }}
-            git pull origin main
+
+            if [ ! -d ".git" ]; then
+              echo "=== Cloning repository for the first time ==="
+              git clone git@github.com:${{ github.repository }}.git .
+            else
+              echo "=== Pulling latest code ==="
+              git pull origin main
+            fi
 
             echo "=== Writing .env file ==="
             cat > .env << 'ENVEOF'
