@@ -86,6 +86,7 @@ npm run dev
 ```
 
 ---
+Loyiha muvaffaqiyatli sozlandi.
 
 ## AWS EC2 Deployment
 
