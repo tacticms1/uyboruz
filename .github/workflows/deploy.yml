@@ -64,6 +64,18 @@ jobs:
           port: 22
           script: |
             set -e
+            echo "=== Ensuring Docker is installed and running ==="
+            if ! command -v docker &> /dev/null; then
+              echo "Docker not found. Installing..."
+              sudo apt-get update
+              sudo apt-get install -y docker.io docker-compose-v2
+              sudo usermod -aG docker ${{ secrets.EC2_USER }}
+              sudo systemctl enable --now docker
+            fi
+            
+            # Ensure the socket has correct permissions
+            sudo chmod 666 /var/run/docker.sock
+
             echo "=== Ensuring GitHub is in known_hosts ==="
             mkdir -p ~/.ssh
             ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts
