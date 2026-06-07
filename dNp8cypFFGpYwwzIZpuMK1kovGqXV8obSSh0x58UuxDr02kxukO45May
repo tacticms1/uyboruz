@@ -1,0 +1,29 @@
+[33mcommit 48c19da7303b76fe559b29d1c4144b3c380916dd[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: tacticms1 <i.baxtiyorov@student.pdp.university>
+Date:   Sun Jun 7 23:41:05 2026 +0500
+
+    Update CI/CD: Remove cache and use npm install
+
+[33mcommit cec0c33fdd38432096ac64cc6cb45980a50c59f3[m
+Author: tacticms1 <i.baxtiyorov@student.pdp.university>
+Date:   Sun Jun 7 23:40:17 2026 +0500
+
+    Security: Stop tracking .pem file
+
+[33mcommit 7b9b67c8a247fabbd690dba4ded575aa1f347474[m
+Author: tacticms1 <i.baxtiyorov@student.pdp.university>
+Date:   Sun Jun 7 23:39:30 2026 +0500
+
+    Trigger deploy
+
+[33mcommit 77712614de81dec2b3ebf2a689b83c8f469cfd1f[m
+Author: tacticms1 <i.baxtiyorov@student.pdp.university>
+Date:   Sun Jun 7 23:35:40 2026 +0500
+
+    Update .gitignore
+
+[33mcommit 00d46e42a62d6ab49be0113ad6123df355a16ad7[m
+Author: tacticms1 <i.baxtiyorov@student.pdp.university>
+Date:   Sun Jun 7 23:35:03 2026 +0500
+
+    Fix: Add package-lock.json for GitHub Actions
