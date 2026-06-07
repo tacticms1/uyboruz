@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  # ── PostgreSQL Database ──────────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: uyboruz-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-uyboruz}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-uyboruz2024}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - uyboruz-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-uyboruz}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ── Next.js Application ──────────────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: uyboruz-app
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-uyboruz}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-uyboruz2024}
+      NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL:-http://localhost}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - uyboruz-net
+    # App does NOT expose ports directly — Nginx is the gateway
+
+  # ── Nginx Reverse Proxy ──────────────────────────────────────────────────────
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: uyboruz-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - app
+    networks:
+      - uyboruz-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  uyboruz-net:
+    driver: bridge

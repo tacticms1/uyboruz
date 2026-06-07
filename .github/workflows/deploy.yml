@@ -1,0 +1,96 @@
+name: UyBor CI/CD — AWS EC2 Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  APP_DIR: /home/ubuntu/uyboruz
+
+jobs:
+  # ─── 1. Build & Test ──────────────────────────────────────────────────────────
+  build:
+    name: Build & Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run lint
+        run: npm run lint --if-present
+
+      - name: Build Next.js app
+        run: npm run build
+        env:
+          # Use dummy DB values — build does not need real DB
+          DB_HOST: localhost
+          DB_PORT: "5432"
+          DB_NAME: uyboruz
+          DB_USER: postgres
+          DB_PASSWORD: uyboruz2024
+          NEXT_TELEMETRY_DISABLED: "1"
+
+      - name: Build success ✅
+        run: echo "Build completed successfully"
+
+  # ─── 2. Deploy to AWS EC2 ─────────────────────────────────────────────────────
+  deploy:
+    name: Deploy to AWS EC2
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          script: |
+            set -e
+            echo "=== Pulling latest code ==="
+            cd ${{ env.APP_DIR }}
+            git pull origin main
+
+            echo "=== Writing .env file ==="
+            cat > .env << 'ENVEOF'
+            DB_NAME=${{ secrets.DB_NAME }}
+            DB_USER=${{ secrets.DB_USER }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            NEXT_PUBLIC_BASE_URL=${{ secrets.NEXT_PUBLIC_BASE_URL }}
+            ENVEOF
+
+            echo "=== Stopping old containers ==="
+            docker compose down --remove-orphans || true
+
+            echo "=== Building & starting new containers ==="
+            docker compose up -d --build
+
+            echo "=== Waiting for app to be healthy ==="
+            sleep 15
+            docker compose ps
+
+            echo "=== Health check ==="
+            curl -sf http://localhost/api/health && echo "✅ App is healthy!" || echo "⚠️ Health check failed"
+
+            echo "=== Cleaning up unused Docker images ==="
+            docker image prune -f
+
+            echo "=== Deployment complete! ==="
